@@ -170,6 +170,10 @@ export const CreateListing: React.FC = () => {
     try {
       const base64Image = images[0].split(',')[1];
 
+      if (!base64Image) {
+        throw new Error('Invalid image data');
+      }
+
       const res = await fetch('/api/generate-listing', {
         method: 'POST',
         headers: {
@@ -181,16 +185,19 @@ export const CreateListing: React.FC = () => {
       });
 
       const data = await res.json();
+      console.log('AI response:', data);
 
       if (!res.ok) {
         throw new Error(data?.error || 'AI request failed');
       }
 
-      if (data.result) {
+      if (data?.result?.description) {
         setFormData((prev) => ({
           ...prev,
-          description: data.result,
+          description: data.result.description,
         }));
+      } else {
+        throw new Error('No description returned');
       }
     } catch (error) {
       console.error('AI Generation failed:', error);
