@@ -160,58 +160,10 @@ export const CreateListing: React.FC = () => {
   };
 
   const generateWithAI = async () => {
-  if (images.length === 0) {
-    alert('Please upload at least one image first.');
-    return;
-  }
-
-  setIsGenerating(true);
-
-  try {
-    const base64Image = images[0].split(',')[1];
-
-    if (!base64Image) {
-      throw new Error('Invalid image data');
+    if (images.length === 0) {
+      alert('Please upload at least one image first.');
+      return;
     }
-
-    const res = await fetch('/api/generate-listing', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        imageBase64: base64Image,
-      }),
-    });
-
-    const data = await res.json();
-    console.log('AI response:', data);
-
-    if (!res.ok) {
-      throw new Error(data?.error || 'AI request failed');
-    }
-
-    if (!data?.result) {
-      throw new Error('No result returned');
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      title: data.result.title || prev.title,
-      description: data.result.description || prev.description,
-      category: data.result.category || prev.category,
-      condition: data.result.condition || prev.condition,
-      tags: Array.isArray(data.result.tags)
-        ? data.result.tags.join(', ')
-        : prev.tags,
-    }));
-  } catch (error) {
-    console.error('AI Generation failed:', error);
-    alert('Failed to generate details. Please try again.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
 
     setIsGenerating(true);
 
@@ -239,14 +191,24 @@ export const CreateListing: React.FC = () => {
         throw new Error(data?.error || 'AI request failed');
       }
 
-      if (data?.result?.description) {
-        setFormData((prev) => ({
-          ...prev,
-          description: data.result.description,
-        }));
-      } else {
-        throw new Error('No description returned');
+      if (!data?.result) {
+        throw new Error('No result returned');
       }
+
+      setFormData((prev) => ({
+        ...prev,
+        title: data.result.title || prev.title,
+        description: data.result.description || prev.description,
+        category: CATEGORIES.includes(data.result.category)
+          ? data.result.category
+          : prev.category,
+        condition: CONDITIONS.includes(data.result.condition)
+          ? data.result.condition
+          : prev.condition,
+        tags: Array.isArray(data.result.tags)
+          ? data.result.tags.join(', ')
+          : prev.tags,
+      }));
     } catch (error) {
       console.error('AI Generation failed:', error);
       alert('Failed to generate details. Please try again.');
@@ -385,8 +347,8 @@ export const CreateListing: React.FC = () => {
                 Listing Assistant
               </div>
               <p className="text-xs leading-relaxed mb-3 text-border-ink">
-                Upload a photo of your item and we&apos;ll generate the description
-                for you.
+                Upload a photo of your item and we&apos;ll generate the title,
+                description, category, condition, and tags for you.
               </p>
               <button
                 type="button"
