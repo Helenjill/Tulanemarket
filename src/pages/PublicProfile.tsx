@@ -40,14 +40,25 @@ export const PublicProfile: React.FC = () => {
         }
 
         // Fetch their listings
-        const qListings = query(
-          collection(db, 'listings'),
-          where('sellerId', '==', id),
-          orderBy('createdAt', 'desc')
-        );
-        const listingsSnap = await getDocs(qListings);
-        setListings(listingsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        
+       const qListings = query(
+  collection(db, 'listings'),
+  where('sellerId', '==', id)
+);
+
+const listingsSnap = await getDocs(qListings);
+
+const fetchedListings = listingsSnap.docs.map(d => ({
+  id: d.id,
+  ...d.data()
+}));
+
+fetchedListings.sort((a: any, b: any) => {
+  const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+  const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+  return timeB - timeA;
+});
+
+setListings(fetchedListings);
         // Listen to their reviews
         const qReviews = query(
           collection(db, 'reviews'),
