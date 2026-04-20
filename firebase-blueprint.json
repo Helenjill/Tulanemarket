@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A verified Tulane student user profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "gradYear": { "type": "number" },
+        "major": { "type": "string" },
+        "bio": { "type": "string" },
+        "createdAt": { "type": "timestamp" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" }
+      },
+      "required": ["uid", "email", "name", "createdAt"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "A product listing on the marketplace.",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "condition": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["available", "pending", "sold"] },
+        "meetupLocations": { "type": "array", "items": { "type": "string" } },
+        "paymentMethods": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["sellerId", "title", "price", "category", "condition", "status", "createdAt"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "A user's favorited listing.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "listingId": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["userId", "listingId", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A review left by a buyer or seller for another user.",
+      "type": "object",
+      "properties": {
+        "reviewerId": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["reviewerId", "targetUserId", "rating", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "An in-app notification for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "link": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "An offer made on a listing.",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected", "countered"] },
+        "counterAmount": { "type": "number" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["listingId", "buyerId", "sellerId", "amount", "status", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A chat session between a buyer and seller for a listing.",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["listingId", "buyerId", "sellerId", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message within a chat.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles."
+    },
+    "/listings/{listingId}": {
+      "schema": { "$ref": "#/entities/Listing" },
+      "description": "Product listings."
+    },
+    "/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User favorites."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "User reviews."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User in-app notifications."
+    },
+    "/offers/{offerId}": {
+      "schema": { "$ref": "#/entities/Offer" },
+      "description": "Offers on listings."
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/Chat" },
+      "description": "Chat sessions."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages in a chat."
+    }
+  }
+}

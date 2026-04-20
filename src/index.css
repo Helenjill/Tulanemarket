@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Georgia:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, sans-serif;
+  --font-serif: "Georgia", serif;
+  
+  --color-tulane-green: #006747;
+  --color-border-ink: #cbd5e1;
+  --color-bg-page: #f8fafc;
+  --color-bg-muted: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-light-blue: #e0f2fe;
+  --color-accent-blue: #0ea5e9;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-page text-text-primary font-sans antialiased;
+  }
+  
+  /* Inherit some softer rounded corners for interactive elements */
+  input, button, textarea, select {
+    @apply rounded-xl transition-all duration-200;
+  }
+  
+  /* Give main cards and images a softer look */
+  img {
+    @apply rounded-xl;
+  }
+}
+
