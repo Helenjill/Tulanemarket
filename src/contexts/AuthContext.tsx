@@ -79,8 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setDbUser(userData);
            }
         } catch (e) {
-           // Silently ignore to avoid breaking UI. User might just have a bad connection.
-        } finally {
+  console.error('AuthContext user doc error:', e);
+} finally {
           setLoading(false);
         }
       } else {
