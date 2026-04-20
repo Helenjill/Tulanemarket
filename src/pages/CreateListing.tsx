@@ -160,10 +160,58 @@ export const CreateListing: React.FC = () => {
   };
 
   const generateWithAI = async () => {
-    if (images.length === 0) {
-      alert('Please upload at least one image first.');
-      return;
+  if (images.length === 0) {
+    alert('Please upload at least one image first.');
+    return;
+  }
+
+  setIsGenerating(true);
+
+  try {
+    const base64Image = images[0].split(',')[1];
+
+    if (!base64Image) {
+      throw new Error('Invalid image data');
     }
+
+    const res = await fetch('/api/generate-listing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64: base64Image,
+      }),
+    });
+
+    const data = await res.json();
+    console.log('AI response:', data);
+
+    if (!res.ok) {
+      throw new Error(data?.error || 'AI request failed');
+    }
+
+    if (!data?.result) {
+      throw new Error('No result returned');
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      title: data.result.title || prev.title,
+      description: data.result.description || prev.description,
+      category: data.result.category || prev.category,
+      condition: data.result.condition || prev.condition,
+      tags: Array.isArray(data.result.tags)
+        ? data.result.tags.join(', ')
+        : prev.tags,
+    }));
+  } catch (error) {
+    console.error('AI Generation failed:', error);
+    alert('Failed to generate details. Please try again.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
     setIsGenerating(true);
 
