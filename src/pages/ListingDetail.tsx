@@ -201,18 +201,130 @@ export const ListingDetail: React.FC = () => {
         )}
       </div>
 
-      {/* Right: Details */}
-      <div className="flex flex-col">
-        <div className="mb-6">
-          <div className="flex justify-between items-start">
-            <h1 className="text-3xl font-serif italic text-text-primary">{listing.title}</h1>
-            <button 
-              onClick={toggleFavorite}
-              className="w-10 h-10 flex items-center justify-center text-border-ink hover:bg-bg-muted transition-colors border border-border-ink"
-            >
-              <Heart className={`w-5 h-5 ${favoriteDocId ? 'fill-red-500 text-red-500' : ''}`} />
-            </button>
+    {/* Right: Details */}
+<div className="flex flex-col">
+  <div className="mb-6">
+    <div className="flex justify-between items-start">
+      <h1 className="text-3xl font-serif italic text-text-primary">{listing.title}</h1>
+      <button 
+        onClick={toggleFavorite}
+        className="w-10 h-10 flex items-center justify-center text-border-ink hover:bg-bg-muted transition-colors border border-border-ink"
+      >
+        <Heart className={`w-5 h-5 ${favoriteDocId ? 'fill-red-500 text-red-500' : ''}`} />
+      </button>
+    </div>
+
+    <p className="text-3xl font-extrabold text-text-primary mt-2">${listing.price}</p>
+
+    <div className="flex items-center space-x-4 mt-4 text-sm text-text-secondary font-medium">
+      <span>{listing.condition}</span>
+      <span>•</span>
+      <span>{listing.category}</span>
+      <span>•</span>
+      <span>
+        {listing.createdAt ? formatDistanceToNow(listing.createdAt.toDate()) + ' ago' : 'Just now'}
+      </span>
+    </div>
+  </div>
+
+  <p className="mb-6 whitespace-pre-wrap">{listing.description}</p>
+
+  {/* Seller Info */}
+  <Link
+    to={`/user/${listing.sellerId}`}
+    className="block border border-border-ink p-4 mb-8 bg-white hover:bg-bg-muted transition-colors"
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        {seller?.photoURL ? (
+          <img src={seller.photoURL} className="w-12 h-12 object-cover border border-border-ink" />
+        ) : (
+          <div className="w-12 h-12 bg-tulane-green text-white flex items-center justify-center font-bold border border-border-ink">
+            {(seller?.name || 'T')[0]}
           </div>
+        )}
+
+        <div className="ml-4">
+          <p className="font-bold">
+            {seller?.name || seller?.displayName || 'Tulane Student'}
+          </p>
+
+          {/* ⭐ Rating */}
+          <div className="text-yellow-500 text-sm">
+            {'⭐'.repeat(Math.max(1, Math.round(seller?.rating || 0)))}
+            <span className="text-xs text-gray-500 ml-2">
+              {seller?.reviewCount || 0} reviews
+            </span>
+          </div>
+
+          {/* ✅ Verified */}
+          {seller?.email?.endsWith('@tulane.edu') && (
+            <p className="text-xs text-green-600 font-semibold mt-1">
+              Verified Tulane Student
+            </p>
+          )}
+        </div>
+      </div>
+
+      <span className="text-sm font-semibold">View →</span>
+    </div>
+  </Link>
+
+  {/* Actions */}
+  {user?.uid !== listing.sellerId && (
+    <div className="space-y-3 mt-auto">
+      {showOfferForm ? (
+        <form onSubmit={handleMakeOffer} className="flex space-x-2">
+          <input
+            type="number"
+            value={offerAmount}
+            onChange={(e) => setOfferAmount(e.target.value)}
+            className="border border-border-ink px-3 py-2 w-full"
+            placeholder="Offer amount"
+          />
+
+          <button type="submit" className="bg-black text-white px-4 py-2">
+            Send
+          </button>
+
+          <button type="button" onClick={() => setShowOfferForm(false)}>
+            Cancel
+          </button>
+        </form>
+      ) : (
+        <button
+          onClick={() => setShowOfferForm(true)}
+          className="w-full bg-black text-white py-3 font-semibold"
+        >
+          Make Offer
+        </button>
+      )}
+
+      <button
+        onClick={handleMessageSeller}
+        className="w-full border border-black py-3 font-semibold"
+      >
+        Message Seller
+      </button>
+    </div>
+  )}
+
+  {user?.uid === listing.sellerId && (
+    <div className="mt-auto space-y-3">
+      <button onClick={handleMarkAsSold} className="w-full bg-green-600 text-white py-3">
+        Mark as Sold
+      </button>
+
+      <Link to={`/edit/${listing.id}`} className="block text-center border py-3">
+        Edit Listing
+      </Link>
+
+      <button onClick={handleDeleteListing} className="w-full border border-red-500 text-red-500 py-3">
+        Delete Listing
+      </button>
+    </div>
+  )}
+</div>
           <p className="text-3xl font-extrabold text-text-primary mt-2">${listing.price}</p>
           <div className="flex items-center space-x-4 mt-4 text-sm text-text-secondary font-medium">
             <span>{listing.condition}</span>
