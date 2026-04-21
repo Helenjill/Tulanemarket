@@ -21,7 +21,7 @@ import { Send, Trash2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 export const Messages: React.FC = () => {
-  const { user } = useAuth();
+  const { user, dbUser } = useAuth();
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
 
@@ -41,7 +41,53 @@ export const Messages: React.FC = () => {
     let buyerChats: any[] = [];
     let sellerChats: any[] = [];
 
-    const mergeChats = () => {
+    const enrichChats = async (rawChats: any[]) => {
+      const enriched = await Promise.all(
+        rawChats.map(async (chat) => {
+          const isBuyer = chat.buyerId === user.uid;
+          const otherUserId = isBuyer ? chat.sellerId : chat.buyerId;
+
+          let otherName =
+            isBuyer
+              ? chat.sellerName
+              : chat.buyerName;
+
+          let otherPhoto =
+            isBuyer
+              ? chat.sellerPhoto
+              : chat.buyerPhoto;
+
+          if (!otherName || !otherPhoto) {
+            try {
+              const otherUserSnap = await getDoc(doc(db, 'users', otherUserId));
+              if (otherUserSnap.exists()) {
+                const otherUserData = otherUserSnap.data();
+                otherName =
+                  otherName ||
+                  otherUserData.name ||
+                  otherUserData.displayName ||
+                  otherUserData.email?.split('@')[0] ||
+                  'Tulane Student';
+                otherPhoto = otherPhoto || otherUserData.photoURL || '';
+              }
+            } catch (error) {
+              console.error('Error loading chat user info:', error);
+            }
+          }
+
+          return {
+            ...chat,
+            otherUserId,
+            otherName: otherName || 'Tulane Student',
+            otherPhoto: otherPhoto || '',
+          };
+        })
+      );
+
+      return enriched;
+    };
+
+    const mergeChats = async () => {
       const chatMap = new Map<string, any>();
 
       [...buyerChats, ...sellerChats].forEach((chat) => {
@@ -54,7 +100,8 @@ export const Messages: React.FC = () => {
         return bTime - aTime;
       });
 
-      setChats(merged);
+      const enriched = await enrichChats(merged);
+      setChats(enriched);
       setLoadingChats(false);
     };
 
@@ -153,6 +200,10 @@ export const Messages: React.FC = () => {
       await updateDoc(doc(db, 'chats', activeChat.id), {
         lastMessage: trimmedMessage,
         updatedAt: serverTimestamp(),
+        buyerName: activeChat.buyerName || dbUser?.name || '',
+        sellerName: activeChat.sellerName || '',
+        buyerPhoto: activeChat.buyerPhoto || dbUser?.photoURL || '',
+        sellerPhoto: activeChat.sellerPhoto || '',
       });
 
       const receiverId =
@@ -208,6 +259,10 @@ export const Messages: React.FC = () => {
     }
   };
 
+  const activeChatDisplayName = activeChat?.otherName || 'Tulane Student';
+  const activeChatPhoto = activeChat?.otherPhoto || '';
+  const activeChatListingTitle = activeChat?.listingTitle || 'Listing';
+
   return (
     <div className="max-w-5xl mx-auto bg-white border border-border-ink h-[600px] flex">
       <div className="w-1/3 border-r border-border-ink flex flex-col bg-bg-muted">
@@ -239,12 +294,31 @@ export const Messages: React.FC = () => {
                     onClick={() => handleSelectChat(chat)}
                     className="flex-1 text-left p-4 hover:bg-white transition-colors"
                   >
-                    <p className="text-sm font-bold text-text-primary truncate">
-                      Chat about Listing
-                    </p>
-                    <p className="text-xs text-text-secondary mt-1 truncate">
-                      {chat.lastMessage || 'Start the conversation'}
-                    </p>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {chat.otherPhoto ? (
+                        <img
+                          src={chat.otherPhoto}
+                          alt={chat.otherName}
+                          className="w-10 h-10 object-cover border border-border-ink rounded-full flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-tulane-green text-white flex items-center justify-center font-bold border border-border-ink rounded-full flex-shrink-0">
+                          {(chat.otherName || 'T').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-text-primary truncate">
+                          {chat.otherName || 'Tulane Student'}
+                        </p>
+                        <p className="text-[11px] text-text-secondary truncate">
+                          {chat.listingTitle || 'Listing'}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-1 truncate">
+                          {chat.lastMessage || 'Start the conversation'}
+                        </p>
+                      </div>
+                    </div>
                   </button>
 
                   <button
@@ -267,9 +341,28 @@ export const Messages: React.FC = () => {
         {activeChat ? (
           <>
             <div className="p-4 border-b border-border-ink bg-white">
-              <h3 className="font-bold text-text-primary uppercase tracking-wider text-sm">
-                Conversation
-              </h3>
+              <div className="flex items-center gap-3">
+                {activeChatPhoto ? (
+                  <img
+                    src={activeChatPhoto}
+                    alt={activeChatDisplayName}
+                    className="w-10 h-10 object-cover border border-border-ink rounded-full"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-tulane-green text-white flex items-center justify-center font-bold border border-border-ink rounded-full">
+                    {activeChatDisplayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <h3 className="font-bold text-text-primary text-sm truncate">
+                    {activeChatDisplayName}
+                  </h3>
+                  <p className="text-xs text-text-secondary truncate">
+                    About: {activeChatListingTitle}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -316,7 +409,7 @@ export const Messages: React.FC = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={`Message ${activeChatDisplayName}...`}
                   className="flex-1 border border-border-ink px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-border-ink bg-bg-page"
                 />
                 <button
