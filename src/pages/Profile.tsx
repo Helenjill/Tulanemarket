@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Upload, Loader2 } from 'lucide-react';
 import {
@@ -26,7 +27,15 @@ export const Profile: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const [userListings, setUserListings] = useState<Listing[]>([]);
+  const [editedName, setEditedName] = useState('');
+
+  useEffect(() => {
+    if (dbUser?.name) {
+      setEditedName(dbUser.name);
+    }
+  }, [dbUser]);
 
   if (!user || !dbUser) return null;
 
@@ -65,6 +74,30 @@ export const Profile: React.FC = () => {
     }
   };
 
+  const handleSaveName = async () => {
+    if (!user || !editedName.trim()) return;
+
+    setIsSavingName(true);
+
+    try {
+      const trimmedName = editedName.trim();
+      const userRef = doc(db, 'users', user.uid);
+
+      await updateDoc(userRef, { name: trimmedName });
+
+      if (setDbUser) {
+        setDbUser({ ...dbUser, name: trimmedName });
+      }
+
+      alert('Name updated successfully.');
+    } catch (error) {
+      console.error('Error updating name:', error);
+      alert('Failed to update name. Please try again.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUserListings = async () => {
       if (!user) return;
@@ -83,6 +116,12 @@ export const Profile: React.FC = () => {
           id: listingDoc.id,
           ...(listingDoc.data() as Omit<Listing, 'id'>),
         }));
+
+        listings.sort((a: any, b: any) => {
+          const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+          const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
 
         setUserListings(listings);
       } catch (error) {
@@ -146,11 +185,30 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-text-primary">
-              {dbUser.name}
-            </h1>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="w-full max-w-sm border border-border-ink px-3 py-2 bg-white text-text-primary focus:outline-none focus:ring-1 focus:ring-border-ink"
+                  placeholder="Your name"
+                />
+              </div>
 
-            <div className="flex items-center mt-2 space-x-2">
+              <button
+                onClick={handleSaveName}
+                disabled={isSavingName || !editedName.trim()}
+                className="px-4 py-2 bg-border-ink text-white text-xs font-semibold uppercase tracking-wider hover:bg-black disabled:opacity-50 transition-colors"
+              >
+                {isSavingName ? 'Saving...' : 'Save Name'}
+              </button>
+            </div>
+
+            <div className="flex items-center mt-4 space-x-2">
               <span className="inline-flex items-center text-[9px] font-bold text-tulane-green uppercase bg-[#E8F5E9] px-1.5 py-0.5 border border-tulane-green">
                 Verified Tulane Student
               </span>
@@ -207,9 +265,10 @@ export const Profile: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {userListings.map((listing) => (
-              <div
+              <Link
                 key={listing.id}
-                className="border border-border-ink bg-white overflow-hidden"
+                to={`/listing/${listing.id}`}
+                className="border border-border-ink bg-white overflow-hidden block hover:shadow-md transition-shadow"
               >
                 <div className="aspect-square bg-bg-page border-b border-border-ink">
                   {listing.images && listing.images.length > 0 ? (
@@ -246,7 +305,7 @@ export const Profile: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
